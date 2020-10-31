@@ -1,0 +1,18 @@
+# Minecraft
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: minecraft-minecraft-datadir
+  labels:
+    app: minecraft-minecraft
+    chart: "minecraft-1.2.2"
+    release: "minecraft"
+    heritage: "Helm"
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  nfs:
+    server: 10.0.0.76
+    path: "/media/seagate/Config/Minecraft"

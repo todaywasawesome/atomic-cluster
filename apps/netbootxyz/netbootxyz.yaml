@@ -1,0 +1,66 @@
+---
+ apiVersion: apps/v1
+ kind: Deployment
+ metadata:
+   name: netbootxyz
+   labels:
+     app: netbootxyz
+ spec:
+   replicas: 1
+   selector:
+      matchLabels:
+        app: netbootxyz
+   template:
+     metadata:
+       labels:
+         app: netbootxyz
+ 
+     spec:
+      containers:
+         - name: netbootxyz
+           image: linuxserver/netbootxyz:version-2.0.24
+           imagePullPolicy: Always
+           ports:
+             - containerPort: 3000
+               name: pxe
+             - containerPort: 69
+               name: tftp
+             - containerPort: 80
+               name: backup
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: netbootxyz
+  annotations:
+    metallb.universe.tf/allow-shared-ip: "netbootxyz"
+spec:
+  loadBalancerIP: 10.0.0.25
+  selector:
+    app: netbootxyz
+  ports:
+  - protocol: TCP
+    port: 3000
+    targetPort: 3000
+    name: pxe
+  - protocol: TCP
+    port: 8080
+    targetPort: 80
+    name: backup
+  type: LoadBalancer
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: netbootxyz-udp
+  annotations:
+    metallb.universe.tf/allow-shared-ip: "netbootxyz"
+spec:
+  loadBalancerIP: 10.0.0.25
+  selector:
+    app: netbootxyz
+  ports:
+  - protocol: UDP
+    port: 69
+    targetPort: 69
+  type: LoadBalancer

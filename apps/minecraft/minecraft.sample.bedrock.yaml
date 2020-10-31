@@ -1,0 +1,123 @@
+# Minecraft
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: minecraft-minecraft-datadir
+  labels:
+    app: minecraft-minecraft
+    chart: "minecraft-1.2.2"
+    release: "minecraft"
+    heritage: "Helm"
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  nfs:
+    server: 10.0.0.76
+    path: "/media/seagate/Config/Minecraft"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: bds
+  labels:
+    app: minecraft-minecraft
+    chart: "minecraft-1.2.2"
+    release: "minecraft"
+    heritage: "Helm"
+  annotations:
+    volume.beta.kubernetes.io/storage-class: ""
+spec:
+  selector:
+    matchLabels:
+      app: minecraft-minecraft
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: "1Gi"
+  storageClassName: ""
+
+# kind: PersistentVolumeClaim
+# apiVersion: v1
+# metadata:
+#   name: bds
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bds
+  labels:
+    app: bds
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: bds
+      labels:
+        app: bds
+    spec:
+      containers:
+        - name: bds
+          image: itzg/minecraft-bedrock-server
+          imagePullPolicy: Always
+          env:
+            - name: EULA
+              value: "TRUE"
+            - name: GAMEMODE
+              value: survival
+            - name: DIFFICULTY
+              value: normal
+          volumeMounts:
+            - mountPath: /data
+              name: data
+          livenessProbe:
+            exec:
+              command: 
+                - /usr/local/bin/mc-monitor
+                - status-bedrock 
+                - --host 
+                - 127.0.0.1
+                - --port
+                - "19132"
+            initialDelaySeconds: 120
+            timeoutSeconds: 10
+            failureThreshold: 10
+          readinessProbe:
+            exec:
+              command: 
+                - /usr/local/bin/mc-monitor
+                - status-bedrock 
+                - --host 
+                - 127.0.0.1
+                - --port 
+                - "19132"
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            failureThreshold: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: bds
+  selector:
+    matchLabels:
+      app: bds
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bds
+spec:
+  selector:
+    app: bds
+  ports:
+    - port: 19132
+      protocol: UDP
+  type: LoadBalancer

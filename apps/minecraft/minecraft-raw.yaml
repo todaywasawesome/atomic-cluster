@@ -1,0 +1,221 @@
+---
+# Source: minecraft/templates/secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minecraft-minecraft
+  labels:
+    app: minecraft-minecraft
+    chart: "minecraft-1.2.2"
+    release: "minecraft"
+    heritage: "Helm"
+type: Opaque
+data:
+  rcon-password: "Zm94OGZveDI="
+---
+# Source: minecraft/templates/datadir-pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: minecraft-minecraft-datadir
+  labels:
+    app: minecraft-minecraft
+    chart: "minecraft-1.2.2"
+    release: "minecraft"
+    heritage: "Helm"
+  annotations:
+    volume.beta.kubernetes.io/storage-class: ""
+spec:
+  selector:
+    matchLabels:
+      app: minecraft-minecraft
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: "1Gi"
+  storageClassName: ""
+---
+# Source: minecraft/templates/minecraft-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft-minecraft
+  labels:
+    app: minecraft-minecraft
+    chart: "minecraft-1.2.2"
+    release: "minecraft"
+    heritage: "Helm"
+spec:
+  type: LoadBalancer
+  ports:
+  - name: minecraft
+    port: 25565
+    targetPort: minecraft
+    protocol: TCP
+  selector:
+    app: minecraft-minecraft
+---
+# Source: minecraft/templates/rcon-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: "minecraft-minecraft-rcon"
+  labels:
+    app: minecraft-minecraft
+    chart: "minecraft-1.2.2"
+    release: "minecraft"
+    heritage: "Helm"
+spec:
+  type: LoadBalancer
+  ports:
+  - name: rcon
+    port: 25575
+    targetPort: rcon
+    protocol: TCP
+  selector:
+    app: minecraft-minecraft
+---
+# Source: minecraft/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minecraft-minecraft
+  labels:
+    app: minecraft-minecraft
+    chart: "minecraft-1.2.2"
+    release: "minecraft"
+    heritage: "Helm"
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: minecraft-minecraft
+  template:
+    metadata:
+      labels:
+        app: minecraft-minecraft
+    spec:
+      securityContext:
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+      - name: minecraft-minecraft
+        image: "itzg/minecraft-bedrock-server:latest"
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+        readinessProbe:
+          exec:
+            command: 
+              - /usr/local/bin/mc-monitor
+              - status-bedrock 
+              - --host 
+              - 127.0.0.1
+              - --port 
+              - "19132"
+          initialDelaySeconds: 120
+          periodSeconds: 10
+          failureThreshold: 10
+        livenessProbe:
+          exec:
+            command: 
+              - /usr/local/bin/mc-monitor
+              - status-bedrock 
+              - --host 
+              - 127.0.0.1
+              - --port
+              - "19132"
+          initialDelaySeconds: 120
+          timeoutSeconds: 10
+          failureThreshold: 10
+        env:
+        - name: EULA
+          value: "TRUE"
+        - name: TYPE
+          value: "VANILLA"
+        - name: VERSION
+          value: "1.14.4"
+        - name: DIFFICULTY
+          value: "normal"
+        - name: WHITELIST
+          value: ""
+        - name: OPS
+          value: ""
+        - name: ICON
+          value: ""
+        - name: MAX_PLAYERS
+          value: "20"
+        - name: MAX_WORLD_SIZE
+          value: "10000"
+        - name: ALLOW_NETHER
+          value: "true"
+        - name: ANNOUNCE_PLAYER_ACHIEVEMENTS
+          value: "true"
+        - name: ENABLE_COMMAND_BLOCK
+          value: "true"
+        - name: FORCE_gameMode
+          value: "false"
+        - name: GENERATE_STRUCTURES
+          value: "true"
+        - name: HARDCORE
+          value: "false"
+        - name: MAX_BUILD_HEIGHT
+          value: "256"
+        - name: MAX_TICK_TIME
+          value: "60000"
+        - name: SPAWN_ANIMALS
+          value: "true"
+        - name: SPAWN_MONSTERS
+          value: "true"
+        - name: SPAWN_NPCS
+          value: "true"
+        - name: VIEW_DISTANCE
+          value: "10"
+        - name: SEED
+          value: ""
+        - name: MODE
+          value: "survival"
+        - name: MOTD
+          value: "Welcome to the Garfield Minecraft Server on Kubernetes!"
+        - name: PVP
+          value: "false"
+        - name: LEVEL_TYPE
+          value: "DEFAULT"
+        - name: GENERATOR_SETTINGS
+          value: ""
+        - name: LEVEL
+          value: "world"
+        - name: ONLINE_MODE
+          value: "true"
+        - name: MEMORY
+          value: "512M"
+        - name: JVM_OPTS
+          value: ""
+        - name: JVM_XX_OPTS
+          value: ""
+        - name: ENABLE_RCON
+          value: "true"
+        - name: RCON_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: minecraft-minecraft
+              key: rcon-password
+
+        ports:
+        - name: minecraft
+          containerPort: 25565
+          protocol: TCP
+        - name: rcon
+          containerPort: 25575
+          protocol: TCP
+        volumeMounts:
+        - name: datadir
+          mountPath: /data
+      volumes:
+      - name: datadir
+        persistentVolumeClaim:
+          claimName: minecraft-minecraft-datadir

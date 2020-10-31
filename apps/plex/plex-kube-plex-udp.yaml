@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: kube-plex
+    release: plex
+  name: plex-kube-plex-udp
+  annotations:
+    metallb.universe.tf/allow-shared-ip: "plex"
+  namespace: default
+spec:
+  externalTrafficPolicy: Cluster
+  loadBalancerIP: 10.0.0.24
+  ports:
+  - name: dlna
+    nodePort: 31892
+    port: 1900
+    protocol: UDP
+    targetPort: 1900
+  - name: avahi
+    nodePort: 32369
+    port: 5353
+    protocol: UDP
+    targetPort: 5353
+  - name: gdm
+    nodePort: 32753
+    port: 32410
+    protocol: UDP
+    targetPort: 32410
+  - name: gdm2
+    nodePort: 31797
+    port: 32412
+    protocol: UDP
+    targetPort: 32412
+  - name: gdm3
+    nodePort: 31889
+    port: 32413
+    protocol: UDP
+    targetPort: 32413
+  - name: gdm4
+    nodePort: 32259
+    port: 32414
+    protocol: UDP
+    targetPort: 32414
+  selector:
+    app: kube-plex
+    release: plex
+  sessionAffinity: None
+  type: LoadBalancer

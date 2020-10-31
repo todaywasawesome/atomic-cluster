@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-flex-smb
+spec:
+  containers:
+  - name: nginx-flex-smb
+    image: nginx
+    volumeMounts:
+    - name: flexvol-mount
+      mountPath: /data
+    - name: devfs
+      mountPath: /dev/dri
+    - name: sysfs
+      mountPath: /sys/class/drm
+  volumes:
+  - name: flexvol-mount
+    persistentVolumeClaim:
+      claimName: nfs
+  - name: devfs
+    hostPath:
+      path: /dev/dri
+  - name: sysfs
+    hostPath:
+      path: /sys/class/drm

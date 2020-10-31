@@ -1,0 +1,35 @@
+# media.plex.values.yml
+
+claimToken: "claim-zyPUJNVs_V3vsoVEbEeZ" # Replace `<CLAIM_TOKEN>` by the token obtained previously.
+
+kubePlex:
+  enabled: true # kubePlex (transcoder job) is disabled because not available on ARM. The transcoding will be performed by the main Plex instance instead of a separate Job.
+
+timezone: Europe/London
+
+service:
+  type: LoadBalancer # We will use a LoadBalancer to obtain a virtual IP that can be exposed to Plex Media via our router
+  port: 32400 # Port to expose Plex
+
+rbac:
+  create: true
+
+nodeSelector: {}
+
+ingress:
+  enabled: false
+  hosts:
+  - plex.local
+
+persistence:
+  transcode:
+    claimName: "seagate"
+  data:
+    claimName: "nfs"
+  config:
+    claimName: "config"
+
+resources: {}
+podAnnotations: {}
+proxy:
+  enable: false
