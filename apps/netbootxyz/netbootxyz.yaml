@@ -18,7 +18,7 @@
      spec:
       containers:
          - name: netbootxyz
-           image: linuxserver/netbootxyz:version-2.0.24
+           image: linuxserver/netbootxyz:version-0.6.3
            imagePullPolicy: Always
            ports:
              - containerPort: 3000
